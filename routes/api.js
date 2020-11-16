@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 const passport = require('passport');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 const config = require('../config/database');
 require('../config/passportAdmin')(passport);
@@ -20,13 +22,23 @@ const Sales = require('../models/sales');
 const Post = require('../models/post');
 
 
-
-
-
-
-
+var transporter = nodemailer.createTransport(
+	{
+		service: 'gmail', // your service name
+		secure: false,
+		port:25,
+		auth: {
+			user: "leflourdecousine@gmail.com",
+			pass: "Pass.123"
+		},
+		tls: {
+			rejectUnauthorized: false
+		}
+	}
+);
 
 //SIGNIN - SIGNUP
+//CREA NUEVO USUARIO ADMINISTRADOR
 router.post('/signup/admin', function(req, res) {
 	if (!req.body.username || !req.body.password) {
 		res.json({
@@ -36,7 +48,8 @@ router.post('/signup/admin', function(req, res) {
 	} else {
 		var newAdmin = new Admin({
 			username: req.body.username,
-			password: req.body.password
+			password: req.body.password,
+			role: req.body.role
 		});
 		// save the user
 		newAdmin.save(function(err) {
@@ -54,6 +67,23 @@ router.post('/signup/admin', function(req, res) {
 	}
 });
 
+router.post('/signin/admin/recover', async function(req, res) {
+	let password = req.body.password;
+	let {username} = req.body;
+	await Admin.updateOne({
+		username: `${username}`
+	},
+	{
+		$set:{
+			password: password
+		}
+	});
+
+	res.send("OK");
+
+});
+
+//INICIA SESIÓN EL USUARIO ADMINISTRADOR
 router.post('/signin/admin', function(req, res) {
 	Admin.findOne(
 		{
@@ -73,7 +103,7 @@ router.post('/signin/admin', function(req, res) {
 					if (isMatch && !err) {
 						// if user is found and password is right create a token
 						var token = jwt.sign(admin.toObject(), config.secret, {
-							expiresIn: 5000
+							expiresIn: 5000 //TIEMPO DE EXPIRACIÓN DE A SESIÓN
 						});
 						// return the information including token as JSON
 						res.json({
@@ -92,25 +122,27 @@ router.post('/signin/admin', function(req, res) {
 	);
 });
 
-
-
-
-
-
-
-
 //POSTS
+//PUBLICAR POST
 router.post(
 	'/post/admin',
 	passport.authenticate('jwt', {
 		session: false
-	}),
+	}), //SE LLAMA A LA FUNCIÓN PASSPORT DE VALIDAR SESIÓN
 	async function(req, res) {
-    var token = getToken(req.headers);
-    if(req.file === undefined){
-      res.send("NO SE CARGÓ NINGUNA IMAGEN");
+	
+	//SE LLAMA A LA FUNCIÓN QUE SOLICITA EL TOKEN EN LOS HEADERS
+	var token = getToken(req.headers);
+	
+	//SE VERIFICA SI LA IMAGEN FUE CARGADA O NO
+	if(req.file === undefined){
+      res.send("NO IMAGE FOUND");
     }else{
-      const result = await cloudinary.uploader.upload(req.file.path);
+	  
+	  //PROMESA PARA SUBIR EL ARCHIVO A CLOUDINARY
+	  const result = await cloudinary.uploader.upload(req.file.path);
+	  
+	  //UNA VEZ SUBIDO EL ARCHIVO SE PUEDEN UTILIZAR LOS DATOS DE LA IMAGEN SUBIDA
       if (token) {
         const newPost = new Post({
           title: req.body.title,
@@ -137,33 +169,25 @@ router.post(
           success: false,
           msg: 'Unauthorized.'
         });
-      }
+	  }
+	  //BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
       fs.unlink(req.file.path);
     }
 	}
 );
 
+//MUESTRA TODOS LOS POSTS
 router.get(
 	'/posts',
-	passport.authenticate('jwt', {
-		session: false
-	}),
 	function(req, res) {
-		var token = getToken(req.headers);
-		if (token) {
 			Post.find(function(err, posts) {
 				if (err) return next(err);
 				res.json(posts);
 			});
-		} else {
-			return res.status(403).send({
-				success: false,
-				msg: 'Unauthorized.'
-			});
-		}
 	}
 );
 
+//EDITAR POST
 router.put(
 	'/posts/:id',
 	passport.authenticate('jwt', {session: false}),
@@ -190,13 +214,14 @@ router.put(
 				res.status(204).json();
 			} else {
 				if (req.file.path === true) {
-          const uploaded = await cloudinary.uploader.upload(req.file.path);
-          const oldpost = await Post.findById(req.params.id);
-          cloudinary.uploader.destroy(oldpost.public_id, function(error,result) {
-            console.log(result, error); 
-          });
-					const post = await Post.findByIdAndUpdate(
-						req.params.id,
+          			const uploaded = await cloudinary.uploader.upload(req.file.path);
+          			const oldpost = await Post.findById(req.params.id);
+          			cloudinary.uploader.destroy(oldpost.public_id, function(error,result) {
+            		console.log(result, error); 
+          		});
+				
+				const post = await Post.findByIdAndUpdate(
+					req.params.id,
 						{
 							title: req.body.title,
 							content: req.body.content,
@@ -334,14 +359,33 @@ router.post('/books/:id', function(req, res) {
 						msg: 'Sale Error.'
 					});
 				}
+				
 				res.json({
 					success: true,
 					msg: 'Successful.'
 				});
+                                                
+					var mailOptions = {
+						from: 'leflourdecousine@gmail.com', // sender address                                   
+						to: `${newUser.email}`, // list of receivers                                 
+						subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
+						text: 'https://drive.google.com/file/d/15DyjL4KKY7dcRpLAp_FUAQKBjaX3Xohs/view?usp=sharing', // plaintext body                                                                                             
+					};
+					
+					// send mail with defined transport object                                                 
+					transporter.sendMail(mailOptions, function(error, info){
+						if(error){
+							return console.log(error);
+						}
+						console.log('Message sent: ' + info.response);
+					});
 			});
 		});
 	}
 });
+
+
+
 
 router.get(
 	'/sales/admin',
@@ -420,5 +464,6 @@ getToken = function(headers) {
 		return null;
 	}
 };
+
 
 module.exports = router;
