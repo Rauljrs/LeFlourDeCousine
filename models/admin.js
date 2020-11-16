@@ -10,6 +10,9 @@ const adminSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    role: {
+        type: String
     }
 });
 
@@ -31,6 +34,22 @@ adminSchema.pre('save', function (next) {
     } else {
         return next();
     }
+});
+
+adminSchema.pre('updateOne', function(next){
+    const password = this.getUpdate().$set.password;
+
+    if (!password) {
+        return next();
+    }
+    try {
+        const salt = bcrypt.genSaltSync();
+        const hash = bcrypt.hashSync(password, salt);
+        this.getUpdate().$set.password = hash;
+        next();
+    } catch (error) {
+        return next(error);
+}
 });
 
 adminSchema.methods.comparePassword = function(passw, cb) {
