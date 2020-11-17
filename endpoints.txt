@@ -1,0 +1,45 @@
+Posts
+Publicar post(necesita token): api/post/admin
+title
+content
+ingredients -> no necesario
+image
+
+Visualizar posts: api/posts
+
+Editar post (necesita token): api/posts/:id
+Cuando aparece el :id me refiero a que es 
+necesario mostrar el id del post que se desea editar o eliminar
+en la direccion
+
+title
+content
+ingredients -> no necesario
+image
+
+Eliminar post (necesita token): api/posts/:id
+
+Libros
+Visualizar libros: api/books
+
+Publicar libro (necesita token): api/book/admin
+title
+author
+publisher
+(todos los datos son requeridos)
+
+Eliminar libro (necesita token): api/books/:id
+
+Ventas y Usuarios
+Ingresar venta: api/books/:id
+name
+lastname
+email
+price
+(todos los campos son necesarios)
+
+Visualizar ventas (necesita token): api/sales/admin
+
+Visualizar usuarios (necesita token): api/users/admin
+
+ 
