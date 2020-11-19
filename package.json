@@ -4,7 +4,8 @@
   "description": "Proyecto",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js",
+    "startdev": "nodemon app.js",
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Raul Rivero",
