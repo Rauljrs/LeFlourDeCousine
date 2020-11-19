@@ -1,7 +1,8 @@
 const express = require('express');
 const morgan = require('morgan');
 const multer = require('multer');
-require('dotenv').config();
+require('dotenv').config({path: 'development.env'});
+
 const port = process.env.PORT || 3000;
 const cors = require('cors');
 const path = require('path');
