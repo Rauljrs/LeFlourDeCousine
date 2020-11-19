@@ -28,8 +28,8 @@ var transporter = nodemailer.createTransport(
 		secure: false,
 		port:25,
 		auth: {
-			user: "leflourdecousine@gmail.com",
-			pass: "Pass.123"
+			user: process.env.EMAIL_USER,
+			pass: process.env.EMAIL_PASS
 		},
 		tls: {
 			rejectUnauthorized: false
@@ -158,11 +158,12 @@ router.post(
               success: false,
               msg: 'Save post failed.'
             });
-          }
+		  }
+		  fs.unlink(req.file.path);
           res.json({
             success: true,
             msg: 'Successful created new post.'
-          });
+		  });
         });
       } else {
         return res.status(403).send({
@@ -171,7 +172,7 @@ router.post(
         });
 	  }
 	  //BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
-      fs.unlink(req.file.path);
+      
     }
 	}
 );
@@ -265,10 +266,12 @@ router.delete('/posts/:id', passport.authenticate('jwt', {session: false}),async
 
 //BOOKS
 router.get('/books', function(req, res) {
-	Book.find(function(err, books) {
+	
+	Book.find({},{"url":0}, function(err, books) {
   	if (err) return next(err);
 		res.json(books);
 	});
+	
 });
 
 router.post(
@@ -283,7 +286,8 @@ router.post(
 			var newBook = new Book({
 				title: req.body.title,
 				author: req.body.author,
-				publisher: req.body.publisher
+				publisher: req.body.publisher,
+				url: req.body.url
 			});
 
 			newBook.save(function(err) {
@@ -308,7 +312,7 @@ router.post(
 );
 
 router.delete('/books/:id', passport.authenticate('jwt', {session: false}),async(req, res) => {
-  const book = await Post.findByIdAndDelete(req.params.id);
+  const book = await Book.findByIdAndDelete(req.params.id);
 
   if(!book){
       return res.status(404).send('ID del libro no existe...');
@@ -352,7 +356,7 @@ router.post('/books/:id', function(req, res) {
 					msg: 'Error.'
 				});
 			}
-			newSale.save(function(err) {
+			newSale.save(async function(err) {
 				if (err) {
 					return res.json({
 						success: false,
@@ -364,12 +368,14 @@ router.post('/books/:id', function(req, res) {
 					success: true,
 					msg: 'Successful.'
 				});
-                                                
+					
+				const book = await Book.findById(req.params.id);
+
 					var mailOptions = {
 						from: 'leflourdecousine@gmail.com', // sender address                                   
 						to: `${newUser.email}`, // list of receivers                                 
 						subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
-						text: 'https://drive.google.com/file/d/15DyjL4KKY7dcRpLAp_FUAQKBjaX3Xohs/view?usp=sharing', // plaintext body                                                                                             
+						text: book.url // plaintext body                                                                                             
 					};
 					
 					// send mail with defined transport object                                                 
