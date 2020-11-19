@@ -1,7 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
 const multer = require('multer');
-const http = require('http');
 require('dotenv').config({path: 'development.env'});
 
 const host = process.env.HOST || '0.0.0.0';
@@ -28,15 +27,9 @@ app.use(multer({storage}).single('image'));
 app.use('/api', api);
 app.use(passport.initialize());
 
-http.createServer(function (req, res) {
-  res.writeHead(200,{'Content-type':'text/plain'}); //Specifies that the respones "hello" is a text
-  res.end("hello"); //shows the text "hello" on th eweb page
-}).listen(port);
+app.listen(port, host, () => console.log('Escuchando puerto: ' + port ));
 
-//app.listen(port, host, () => console.log('Escuchando puerto: ' + port ));
-
-/*
 app.get('/', function(req, res) {
     res.send('Page under construction.');
   });
-*/
+
