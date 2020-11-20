@@ -360,8 +360,8 @@ async (req, res) => {
 	var token = getToken(req.headers);
 	if (token) {
 		if (req.file === undefined) {
-			console.log(req.params.id)
-			const book = await book.findByIdAndUpdate(
+			
+			const book = await Book.findByIdAndUpdate(
 				req.params.id, {
 					title: req.body.title,
 					description: req.body.description,
