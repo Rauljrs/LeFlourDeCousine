@@ -36,30 +36,40 @@ var transporter = nodemailer.createTransport({
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
 router.post('/signup/admin', function (req, res) {
-	if (!req.body.username || !req.body.password) {
-		res.json({
-			success: false,
-			msg: 'Please pass username and password.'
-		});
-	} else {
-		var newAdmin = new Admin({
-			username: req.body.username,
-			password: req.body.password,
-			role: req.body.role
-		});
-		// save the user
-		newAdmin.save(function (err) {
-			if (err) {
-				return res.json({
-					success: false,
-					msg: 'Username already exists.'
-				});
-			}
+	const admin = Admin.findOne({
+		username: req.body.username
+	}).exec();
+
+	if(admin.role === 'admin'){
+		if (!req.body.username || !req.body.password) {
 			res.json({
-				success: true,
-				msg: 'Successful created new user.'
+				success: false,
+				msg: 'Please pass username and password.'
 			});
-		});
+		} else {
+			var newAdmin = new Admin({
+				username: req.body.username,
+				password: req.body.password,
+				role: req.body.role
+			});
+			// save the user
+			newAdmin.save(function (err) {
+				if (err) {
+					return res.json({
+						success: false,
+						msg: 'Username already exists.'
+					});
+				}
+				res.json({
+					success: true,
+					msg: 'Successful created new user.'
+				});
+			});
+		}
+	}else{
+		res.json({
+			msg: 'Only admin can signup new admins'
+		})
 	}
 });
 
@@ -161,7 +171,7 @@ router.post(
 							msg: 'Save post failed.'
 						});
 					}
-					fs.remove(req.file.path);
+					fs.unlink(req.file.path);
 					res.json({
 						success: true,
 						msg: 'Successful created new post.'
@@ -174,6 +184,7 @@ router.post(
 				});
 			}
 			//BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
+			
 
 		}
 	}
@@ -323,7 +334,7 @@ router.post(
 							msg: 'Save book failed.'
 						});
 					}
-					fs.remove(req.path.file);
+					fs.unlink(req.file.path);		
 					res.json({
 						success: true,
 						msg: 'Successful created new book.'
@@ -335,13 +346,13 @@ router.post(
 					msg: 'Unauthorized.'
 				});
 			}
-		}
+		}	
 		
 	}
 );
 
 
-router.put('/books/:id',
+router.put('/admin/books/:id',
 passport.authenticate('jwt', {
 	session: false
 }),
@@ -349,6 +360,7 @@ async (req, res) => {
 	var token = getToken(req.headers);
 	if (token) {
 		if (req.file === undefined) {
+			console.log(req.params.id)
 			const book = await book.findByIdAndUpdate(
 				req.params.id, {
 					title: req.body.title,
@@ -422,7 +434,7 @@ router.delete('/books/:id', passport.authenticate('jwt', {
 
 
 //SALES
-router.post('/books/:id', function (req, res) {
+router.post('/books/:id', async function (req, res) {
 	if (!req.body.name || !req.body.lastname || !req.body.email) {
 		res.json({
 			success: false,
@@ -432,7 +444,8 @@ router.post('/books/:id', function (req, res) {
 		var newUser = new User({
 			name: req.body.name,
 			lastname: req.body.lastname,
-			email: req.body.email
+			email: req.body.email,
+			sales: []
 		});
 
 		var newSale = new Sales({
@@ -441,6 +454,9 @@ router.post('/books/:id', function (req, res) {
 			price: req.body.price
 		});
 
+		User.sales.push(newSale._id);
+		console.log(user.sales); // <= puedes verificar aquí que se ha actualizado el campo
+		await newUser.save();
 		newUser.save(function (err) {
 			if (err) {
 				console.log(err);
@@ -523,15 +539,9 @@ router.get(
 );
 
 
-
-
-
-
-
-
 //Admin
 router.get(
-	'/admin/list',
+	'/admins',
 	passport.authenticate('jwt', {
 		session: false
 	}),
@@ -551,7 +561,7 @@ router.get(
 	}
 );
 
-router.delete('admins/:id', passport.authenticate('jwt', {
+router.delete('admin/:id', passport.authenticate('jwt', {
 	session: false
 }), async (req, res) => {
 	const admin = await Admin.findByIdAndDelete(req.params.id);
