@@ -292,41 +292,56 @@ router.post(
 	passport.authenticate('jwt', {
 		session: false
 	}),
-	function (req, res) {
+	async function (req, res) {
 		var token = getToken(req.headers);
-		if (token) {
-			console.log(req.body);
-			var newBook = new Book({
-				title: req.body.title,
-				author: req.body.author,
-				publisher: req.body.publisher,
-				url: req.body.url
-			});
-
-			newBook.save(function (err) {
-				if (err) {
-					return res.json({
-						success: false,
-						msg: 'Save book failed.'
-					});
-				}
-				res.json({
-					success: true,
-					msg: 'Successful created new book.'
-				});
-			});
+		
+		if (req.file === undefined) {
+			res.send("NO IMAGE FOUND");
 		} else {
-			return res.status(403).send({
-				success: false,
-				msg: 'Unauthorized.'
-			});
+		
+			if (token) {
+				const result = await cloudinary.uploader.upload(req.file.path);
+				
+				var newBook = new Book({
+					title: req.body.title,
+					description: req.body.description,
+					author: req.body.author,
+					publisher: req.body.publisher,
+					url: req.body.url,
+					imageURL: result.url,
+					public_id: result.public_id
+				});
+	
+				newBook.save(function (err) {
+					if (err) {
+						return res.json({
+							success: false,
+							msg: 'Save book failed.'
+						});
+					}
+					res.json({
+						success: true,
+						msg: 'Successful created new book.'
+					});
+				});
+			} else {
+				return res.status(403).send({
+					success: false,
+					msg: 'Unauthorized.'
+				});
+			}
 		}
+		
 	}
 );
 
 router.delete('/books/:id', passport.authenticate('jwt', {
 	session: false
 }), async (req, res) => {
+	const book = await Book.findById(req.params.id);
+	cloudinary.uploader.destroy(book.public_id, function (error, result) {
+		console.log(result, error);
+	});
 	const book = await Book.findByIdAndDelete(req.params.id);
 
 	if (!book) {

@@ -5,6 +5,10 @@ const BookSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  description: {
+    type: String,
+    required: true
+  },
   author: {
     type: String,
     required: true
@@ -12,7 +16,13 @@ const BookSchema = new mongoose.Schema({
   publisher: {
     type: String,
     required: true
-  }
+  },
+  url: {
+    type: String,
+    required: true
+  },
+  imageURL: String,
+  public_id: String
 },{
     timestamps: {
         createdAt: 'created_at',
