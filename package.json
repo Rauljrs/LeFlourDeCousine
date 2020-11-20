@@ -1,5 +1,5 @@
 {
-  "name": "oropeza",
+  "name": "le-flour-de-cousine",
   "version": "1.0.0",
   "description": "Proyecto",
   "main": "index.js",
@@ -27,5 +27,23 @@
     "nodemailer": "^6.4.16",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0"
-  }
+  },
+  "engines": {
+    "node": "12.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rauljrs/LeFlourDeCousine.git"
+  },
+  "keywords": [
+    "heroku",
+    "cocina",
+    "api",
+    "food",
+    "restaurant"
+  ],
+  "bugs": {
+    "url": "https://github.com/Rauljrs/LeFlourDeCousine/issues"
+  },
+  "homepage": "https://github.com/Rauljrs/LeFlourDeCousine#readme"
 }

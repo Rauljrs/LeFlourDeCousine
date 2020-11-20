@@ -3,7 +3,7 @@ const morgan = require('morgan');
 const multer = require('multer');
 require('dotenv').config({path: 'development.env'});
 
-const host = process.env.HOST || '0.0.0.0'
+const host = process.env.HOST || '0.0.0.0';
 const port = process.env.PORT || 3000;
 const cors = require('cors');
 const path = require('path');
