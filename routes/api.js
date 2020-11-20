@@ -342,7 +342,7 @@ router.delete('/books/:id', passport.authenticate('jwt', {
 	cloudinary.uploader.destroy(book.public_id, function (error, result) {
 		console.log(result, error);
 	});
-	const book = await Book.findByIdAndDelete(req.params.id);
+	const deletebook = await Book.findByIdAndDelete(req.params.id);
 
 	if (!book) {
 		return res.status(404).send('ID del libro no existe...');
