@@ -81,7 +81,11 @@ router.post('/signin/admin/recover', async function (req, res) {
 });
 
 //INICIA SESIÓN EL USUARIO ADMINISTRADOR
-router.post('/signin/admin', function (req, res) {
+router.post('/signin/admin', async function (req, res) {
+	const admin = Admin.findOne({
+		username: req.body.username
+	}).exec();
+
 	Admin.findOne({
 			username: req.body.username
 		},
@@ -104,7 +108,8 @@ router.post('/signin/admin', function (req, res) {
 						// return the information including token as JSON
 						res.json({
 							success: true,
-							username: req.body.username,
+							username: admin.username,
+							role: admin.role,
 							token: 'JWT ' + token
 						});
 					} else {
@@ -335,6 +340,64 @@ router.post(
 	}
 );
 
+
+router.put('/books/:id',
+passport.authenticate('jwt', {
+	session: false
+}),
+async (req, res) => {
+	var token = getToken(req.headers);
+	if (token) {
+		if (req.file === undefined) {
+			const book = await book.findByIdAndUpdate(
+				req.params.id, {
+					title: req.body.title,
+					description: req.body.description,
+					author: req.body.author,
+					publisher: req.body.publisher,
+					url: req.body.url
+				}, {
+					new: true
+				}
+			);
+
+			if (!book) {
+				return res.status(404).send('ID not found...');
+			}
+
+			res.status(204).json();
+		} else {
+			if (req.file.path === true) {
+				const uploaded = await cloudinary.uploader.upload(req.file.path);
+				const oldbook = await Book.findById(req.params.id);
+				cloudinary.uploader.destroy(oldbook.public_id, function (error, result) {
+					console.log(result, error);
+				});
+
+				const book = await Book.findByIdAndUpdate(
+					req.params.id, {
+						title: req.body.title,
+						description: req.body.description,
+						author: req.body.author,
+						imageURL: uploaded.url,
+						public_id: uploaded.public_id
+					}, {
+						new: true
+					}
+				);
+				if (!book) {
+					return res.status(404).send('ID not found...');
+				}
+				fs.remove(req.file.path);
+				res.status(204).send('Successful edited the book.');
+			}
+		}
+	}
+}
+
+);
+
+
 router.delete('/books/:id', passport.authenticate('jwt', {
 	session: false
 }), async (req, res) => {
@@ -344,7 +407,7 @@ router.delete('/books/:id', passport.authenticate('jwt', {
 	});
 	const deletebook = await Book.findByIdAndDelete(req.params.id);
 
-	if (!book) {
+	if (!deletebook) {
 		return res.status(404).send('ID del libro no existe...');
 	}
 
@@ -435,7 +498,7 @@ router.get(
 				User.populate(
 					sales, {
 						path: 'users',
-						select: 'email'
+						select: 'name lastname email'
 					},
 					function (err, sales) {
 						Book.populate(
@@ -466,16 +529,16 @@ router.get(
 
 
 
-//USERS
+//Admin
 router.get(
-	'/users/admin',
+	'/admin/list',
 	passport.authenticate('jwt', {
 		session: false
 	}),
 	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
-			User.find(function (err, users) {
+			Admin.find(function (err, users) {
 				if (err) return next(err);
 				res.json(users);
 			});
@@ -487,6 +550,19 @@ router.get(
 		}
 	}
 );
+
+router.delete('admins/:id', passport.authenticate('jwt', {
+	session: false
+}), async (req, res) => {
+	const admin = await Admin.findByIdAndDelete(req.params.id);
+
+	if (!admin) {
+		return res.status(404).send('ID not found...');
+	}
+
+	res.status(200).send('Admin deleted.');
+});
+
 
 getToken = function (headers) {
 	if (headers && headers.authorization) {
