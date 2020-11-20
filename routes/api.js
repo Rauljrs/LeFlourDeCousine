@@ -20,6 +20,7 @@ const Book = require('../models/book');
 const Admin = require('../models/admin');
 const Sales = require('../models/sales');
 const Post = require('../models/post');
+const Sale = require('../models/sales');
 
 
 var transporter = nodemailer.createTransport({
@@ -73,28 +74,43 @@ router.post('/signup/admin', function (req, res) {
 	}
 });
 
-router.post('/signin/admin/recover', async function (req, res) {
-	let password = req.body.password;
-	let {
-		username
-	} = req.body;
-	await Admin.updateOne({
-		username: `${username}`
-	}, {
-		$set: {
-			password: password
+router.put('/signin/admin/change', passport.authenticate('jwt', {session: false}), async function (req, res) {
+			
+	var token = getToken(req.headers);
+	if(token){
+		Admin.findOne({
+			username: req.body.username
+		},
+		function (err, admin) {
+			if (err) throw err;
+
+			if (!admin) {
+				res.status(401).send({
+					success: false,
+					msg: 'Authentication failed. Admin not found.'
+				});
+			} else {
+				// check if password matches
+				admin.comparePassword(req.body.oldpassword, function (err, isMatch) {
+					if (isMatch && !err) {
+						// return the information including token as JSON
+						res.json({msg: "Old password is correct"});
+					} else {
+						res.status(401).send({
+							success: false,
+							msg: 'Authentication failed. Wrong password.'
+						});
+					}
+				});
+			}
 		}
-	});
-
-	res.send("OK");
-
+	);
+	}
+	
 });
 
 //INICIA SESIÓN EL USUARIO ADMINISTRADOR
 router.post('/signin/admin', async function (req, res) {
-	const admin = Admin.findOne({
-		username: req.body.username
-	}).exec();
 
 	Admin.findOne({
 			username: req.body.username
@@ -379,7 +395,7 @@ async (req, res) => {
 
 			res.status(204).json();
 		} else {
-			if (req.file.path === true) {
+			
 				const uploaded = await cloudinary.uploader.upload(req.file.path);
 				const oldbook = await Book.findById(req.params.id);
 				cloudinary.uploader.destroy(oldbook.public_id, function (error, result) {
@@ -400,17 +416,17 @@ async (req, res) => {
 				if (!book) {
 					return res.status(404).send('ID not found...');
 				}
-				fs.remove(req.file.path);
+				fs.unlink(req.file.path);
 				res.status(204).send('Successful edited the book.');
 			}
-		}
+		
 	}
 }
 
 );
 
 
-router.delete('/books/:id', passport.authenticate('jwt', {
+router.delete('/admin/books/:id', passport.authenticate('jwt', {
 	session: false
 }), async (req, res) => {
 	const book = await Book.findById(req.params.id);
@@ -435,68 +451,75 @@ router.delete('/books/:id', passport.authenticate('jwt', {
 
 //SALES
 router.post('/books/:id', async function (req, res) {
-	if (!req.body.name || !req.body.lastname || !req.body.email) {
-		res.json({
-			success: false,
-			msg: 'Please pass name, last name and email.'
-		});
-	} else {
-		var newUser = new User({
-			name: req.body.name,
-			lastname: req.body.lastname,
-			email: req.body.email,
-			sales: []
-		});
+	let uservalid = await User.findOne({username: req.body.username}).exec();
+	//let salevalid = await Sales.findById(uservalid._id).exec();
+	console.log(uservalid);
+	//console.log(salevalid);
+	/*
+		if (!req.body.name || !req.body.lastname || !req.body.email) {
+			res.json({
+				success: false,
+				msg: 'Please pass name, last name and email.'
+			});
+		} else {
+			var newUser = new User({
+				name: req.body.name,
+				lastname: req.body.lastname,
+				email: req.body.email,
+			});
+	
+			var newSale = new Sales({
+				users: newUser._id,
+				books: req.params.id,
+				price: req.body.price
+			});
+			
 
-		var newSale = new Sales({
-			users: newUser._id,
-			books: req.params.id,
-			price: req.body.price
-		});
-
-		User.sales.push(newSale._id);
-		console.log(user.sales); // <= puedes verificar aquí que se ha actualizado el campo
-		await newUser.save();
-		newUser.save(function (err) {
-			if (err) {
-				console.log(err);
-				return res.json({
-					success: false,
-					msg: 'Error.'
-				});
-			}
-			newSale.save(async function (err) {
+			newUser.save(function (err) {
 				if (err) {
+					console.log(err);
 					return res.json({
 						success: false,
-						msg: 'Sale Error.'
+						msg: 'Error.'
 					});
 				}
-
-				res.json({
-					success: true,
-					msg: 'Successful.'
-				});
-
-				const book = await Book.findById(req.params.id);
-
-				var mailOptions = {
-					from: 'leflourdecousine@gmail.com', // sender address                                   
-					to: `${newUser.email}`, // list of receivers                                 
-					subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
-					text: book.url // plaintext body                                                                                             
-				};
-
-				// send mail with defined transport object                                                 
-				transporter.sendMail(mailOptions, function (error, info) {
-					if (error) {
-						return console.log(error);
+				newSale.save(async function (err) {
+					if (err) {
+						return res.json({
+							success: false,
+							msg: 'Sale Error.'
+						});
 					}
-					console.log('Message sent: ' + info.response);
+	
+					res.json({
+						success: true,
+						msg: 'Successful.'
+					});
+	
+					const book = await Book.findById(req.params.id);
+	
+					var mailOptions = {
+						from: 'leflourdecousine@gmail.com', // sender address                                   
+						to: `${newUser.email}`, // list of receivers                                 
+						subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
+						text: book.url // plaintext body                                                                                             
+					};
+	
+					// send mail with defined transport object                                                 
+					transporter.sendMail(mailOptions, function (error, info) {
+						if (error) {
+							return console.log(error);
+						}
+						console.log('Message sent: ' + info.response);
+					});
 				});
 			});
-		});
-	}
+	
+			user.sales.push(sale._id);
+		console.log(sale); // <= puedes verificar aquí que se ha actualizado el campo
+		await user.save();
+	*/
+	
 });
 
 
@@ -561,7 +584,7 @@ router.get(
 	}
 );
 
-router.delete('admin/:id', passport.authenticate('jwt', {
+router.delete('/admin/:id', passport.authenticate('jwt', {
 	session: false
 }), async (req, res) => {
 	const admin = await Admin.findByIdAndDelete(req.params.id);

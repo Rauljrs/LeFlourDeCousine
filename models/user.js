@@ -14,10 +14,7 @@ const UserSchema = new mongoose.Schema({
         unique: true,
         required: true       
     },
-    sales: {
-        type: Array,
-        default: []
-    }
+    sales: []
 
 },{
     timestamps: {
