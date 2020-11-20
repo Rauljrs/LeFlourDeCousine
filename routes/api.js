@@ -22,24 +22,22 @@ const Sales = require('../models/sales');
 const Post = require('../models/post');
 
 
-var transporter = nodemailer.createTransport(
-	{
-		service: 'gmail', // your service name
-		secure: false,
-		port:25,
-		auth: {
-			user: process.env.EMAIL_USER,
-			pass: process.env.EMAIL_PASS
-		},
-		tls: {
-			rejectUnauthorized: false
-		}
+var transporter = nodemailer.createTransport({
+	service: 'gmail', // your service name
+	secure: false,
+	port: 25,
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASS
+	},
+	tls: {
+		rejectUnauthorized: false
 	}
-);
+});
 
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
-router.post('/signup/admin', function(req, res) {
+router.post('/signup/admin', function (req, res) {
 	if (!req.body.username || !req.body.password) {
 		res.json({
 			success: false,
@@ -52,7 +50,7 @@ router.post('/signup/admin', function(req, res) {
 			role: req.body.role
 		});
 		// save the user
-		newAdmin.save(function(err) {
+		newAdmin.save(function (err) {
 			if (err) {
 				return res.json({
 					success: false,
@@ -67,14 +65,15 @@ router.post('/signup/admin', function(req, res) {
 	}
 });
 
-router.post('/signin/admin/recover', async function(req, res) {
+router.post('/signin/admin/recover', async function (req, res) {
 	let password = req.body.password;
-	let {username} = req.body;
+	let {
+		username
+	} = req.body;
 	await Admin.updateOne({
 		username: `${username}`
-	},
-	{
-		$set:{
+	}, {
+		$set: {
 			password: password
 		}
 	});
@@ -84,12 +83,11 @@ router.post('/signin/admin/recover', async function(req, res) {
 });
 
 //INICIA SESIÓN EL USUARIO ADMINISTRADOR
-router.post('/signin/admin', function(req, res) {
-	Admin.findOne(
-		{
+router.post('/signin/admin', function (req, res) {
+	Admin.findOne({
 			username: req.body.username
 		},
-		function(err, admin) {
+		function (err, admin) {
 			if (err) throw err;
 
 			if (!admin) {
@@ -99,7 +97,7 @@ router.post('/signin/admin', function(req, res) {
 				});
 			} else {
 				// check if password matches
-				admin.comparePassword(req.body.password, function(err, isMatch) {
+				admin.comparePassword(req.body.password, function (err, isMatch) {
 					if (isMatch && !err) {
 						// if user is found and password is right create a token
 						var token = jwt.sign(admin.toObject(), config.secret, {
@@ -129,61 +127,74 @@ router.post(
 	passport.authenticate('jwt', {
 		session: false
 	}), //SE LLAMA A LA FUNCIÓN PASSPORT DE VALIDAR SESIÓN
-	async function(req, res) {
-	
-	//SE LLAMA A LA FUNCIÓN QUE SOLICITA EL TOKEN EN LOS HEADERS
-	var token = getToken(req.headers);
-	
-	//SE VERIFICA SI LA IMAGEN FUE CARGADA O NO
-	if(req.file === undefined){
-      res.send("NO IMAGE FOUND");
-    }else{
-	  
-	  //PROMESA PARA SUBIR EL ARCHIVO A CLOUDINARY
-	  const result = await cloudinary.uploader.upload(req.file.path);
-	  
-	  //UNA VEZ SUBIDO EL ARCHIVO SE PUEDEN UTILIZAR LOS DATOS DE LA IMAGEN SUBIDA
-      if (token) {
-        const newPost = new Post({
-          title: req.body.title,
-          content: req.body.content,
-          ingredients: req.body.ingredients,
-          imageURL: result.url,
-          public_id: result.public_id
-        });
-  
-        await newPost.save(function(err) {
-          if (err) {
-            return res.json({
-              success: false,
-              msg: 'Save post failed.'
-            });
-		  }
-		  fs.unlink(req.file.path);
-          res.json({
-            success: true,
-            msg: 'Successful created new post.'
-		  });
-        });
-      } else {
-        return res.status(403).send({
-          success: false,
-          msg: 'Unauthorized.'
-        });
-	  }
-	  //BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
-      
-    }
+	async function (req, res) {
+
+		//SE LLAMA A LA FUNCIÓN QUE SOLICITA EL TOKEN EN LOS HEADERS
+		var token = getToken(req.headers);
+
+		//SE VERIFICA SI LA IMAGEN FUE CARGADA O NO
+		if (req.file === undefined) {
+			res.send("NO IMAGE FOUND");
+		} else {
+
+			//PROMESA PARA SUBIR EL ARCHIVO A CLOUDINARY
+			const result = await cloudinary.uploader.upload(req.file.path);
+
+			//UNA VEZ SUBIDO EL ARCHIVO SE PUEDEN UTILIZAR LOS DATOS DE LA IMAGEN SUBIDA
+			if (token) {
+				const newPost = new Post({
+					title: req.body.title,
+					content: req.body.content,
+					ingredients: req.body.ingredients,
+					imageURL: result.url,
+					public_id: result.public_id
+				});
+
+				await newPost.save(function (err) {
+					if (err) {
+						return res.json({
+							success: false,
+							msg: 'Save post failed.'
+						});
+					}
+					fs.unlink(req.file.path);
+					res.json({
+						success: true,
+						msg: 'Successful created new post.'
+					});
+				});
+			} else {
+				return res.status(403).send({
+					success: false,
+					msg: 'Unauthorized.'
+				});
+			}
+			//BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
+
+		}
 	}
 );
 
 //MUESTRA TODOS LOS POSTS
 router.get(
 	'/posts',
-	function(req, res) {
-			Post.find(function(err, posts) {
-				if (err) return next(err);
-				res.json(posts);
+	function (req, res) {
+		Post.find(function (err, posts) {
+			if (err) return next(err);
+			res.json(posts);
+		});
+	}
+);
+
+//un solo post
+router.get(
+	'/posts/:id',
+	function (req, res) {
+		Post.findById(req.params.id)
+			.then(post => {
+				return res.json(post);
+			}).catch(err => {
+				return res.status('404').send('ID del post no existe...');
 			});
 	}
 );
@@ -191,19 +202,19 @@ router.get(
 //EDITAR POST
 router.put(
 	'/posts/:id',
-	passport.authenticate('jwt', {session: false}),
+	passport.authenticate('jwt', {
+		session: false
+	}),
 	async (req, res) => {
 		var token = getToken(req.headers);
 		if (token) {
 			if (req.file === undefined) {
 				const post = await Post.findByIdAndUpdate(
-					req.params.id,
-					{
+					req.params.id, {
 						title: req.body.title,
 						content: req.body.content,
 						ingredients: req.body.ingredients
-					},
-					{
+					}, {
 						new: true
 					}
 				);
@@ -215,22 +226,20 @@ router.put(
 				res.status(204).json();
 			} else {
 				if (req.file.path === true) {
-          			const uploaded = await cloudinary.uploader.upload(req.file.path);
-          			const oldpost = await Post.findById(req.params.id);
-          			cloudinary.uploader.destroy(oldpost.public_id, function(error,result) {
-            		console.log(result, error); 
-          		});
-				
-				const post = await Post.findByIdAndUpdate(
-					req.params.id,
-						{
+					const uploaded = await cloudinary.uploader.upload(req.file.path);
+					const oldpost = await Post.findById(req.params.id);
+					cloudinary.uploader.destroy(oldpost.public_id, function (error, result) {
+						console.log(result, error);
+					});
+
+					const post = await Post.findByIdAndUpdate(
+						req.params.id, {
 							title: req.body.title,
 							content: req.body.content,
 							ingredients: req.body.ingredients,
 							imageURL: uploaded.url,
 							public_id: uploaded.public_id
-						},
-						{
+						}, {
 							new: true
 						}
 					);
@@ -245,18 +254,20 @@ router.put(
 	}
 );
 
-router.delete('/posts/:id', passport.authenticate('jwt', {session: false}),async(req, res) => {
-  const post = await Post.findById(req.params.id);
-  cloudinary.uploader.destroy(post.public_id, function(error,result) {
-    console.log(result, error); 
-  });
-  const deletepost = await Post.findByIdAndDelete(req.params.id);
+router.delete('/posts/:id', passport.authenticate('jwt', {
+	session: false
+}), async (req, res) => {
+	const post = await Post.findById(req.params.id);
+	cloudinary.uploader.destroy(post.public_id, function (error, result) {
+		console.log(result, error);
+	});
+	const deletepost = await Post.findByIdAndDelete(req.params.id);
 
-  if(!deletepost){
-      return res.status(404).send('ID del post no existe...');
-  }
+	if (!deletepost) {
+		return res.status(404).send('ID del post no existe...');
+	}
 
-  res.status(200).send('Post borrado con exito');
+	res.status(200).send('Post borrado con exito');
 });
 
 
@@ -265,13 +276,15 @@ router.delete('/posts/:id', passport.authenticate('jwt', {session: false}),async
 
 
 //BOOKS
-router.get('/books', function(req, res) {
-	
-	Book.find({},{"url":0}, function(err, books) {
-  	if (err) return next(err);
+router.get('/books', function (req, res) {
+
+	Book.find({}, {
+		"url": 0
+	}, function (err, books) {
+		if (err) return next(err);
 		res.json(books);
 	});
-	
+
 });
 
 router.post(
@@ -279,7 +292,7 @@ router.post(
 	passport.authenticate('jwt', {
 		session: false
 	}),
-	function(req, res) {
+	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
 			console.log(req.body);
@@ -290,7 +303,7 @@ router.post(
 				url: req.body.url
 			});
 
-			newBook.save(function(err) {
+			newBook.save(function (err) {
 				if (err) {
 					return res.json({
 						success: false,
@@ -311,14 +324,16 @@ router.post(
 	}
 );
 
-router.delete('/books/:id', passport.authenticate('jwt', {session: false}),async(req, res) => {
-  const book = await Book.findByIdAndDelete(req.params.id);
+router.delete('/books/:id', passport.authenticate('jwt', {
+	session: false
+}), async (req, res) => {
+	const book = await Book.findByIdAndDelete(req.params.id);
 
-  if(!book){
-      return res.status(404).send('ID del libro no existe...');
-  }
+	if (!book) {
+		return res.status(404).send('ID del libro no existe...');
+	}
 
-  res.status(200).send('Libro borrado con exito');
+	res.status(200).send('Libro borrado con exito');
 });
 
 
@@ -329,7 +344,7 @@ router.delete('/books/:id', passport.authenticate('jwt', {session: false}),async
 
 
 //SALES
-router.post('/books/:id', function(req, res) {
+router.post('/books/:id', function (req, res) {
 	if (!req.body.name || !req.body.lastname || !req.body.email) {
 		res.json({
 			success: false,
@@ -348,7 +363,7 @@ router.post('/books/:id', function(req, res) {
 			price: req.body.price
 		});
 
-		newUser.save(function(err) {
+		newUser.save(function (err) {
 			if (err) {
 				console.log(err);
 				return res.json({
@@ -356,35 +371,35 @@ router.post('/books/:id', function(req, res) {
 					msg: 'Error.'
 				});
 			}
-			newSale.save(async function(err) {
+			newSale.save(async function (err) {
 				if (err) {
 					return res.json({
 						success: false,
 						msg: 'Sale Error.'
 					});
 				}
-				
+
 				res.json({
 					success: true,
 					msg: 'Successful.'
 				});
-					
+
 				const book = await Book.findById(req.params.id);
 
-					var mailOptions = {
-						from: 'leflourdecousine@gmail.com', // sender address                                   
-						to: `${newUser.email}`, // list of receivers                                 
-						subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
-						text: book.url // plaintext body                                                                                             
-					};
-					
-					// send mail with defined transport object                                                 
-					transporter.sendMail(mailOptions, function(error, info){
-						if(error){
-							return console.log(error);
-						}
-						console.log('Message sent: ' + info.response);
-					});
+				var mailOptions = {
+					from: 'leflourdecousine@gmail.com', // sender address                                   
+					to: `${newUser.email}`, // list of receivers                                 
+					subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
+					text: book.url // plaintext body                                                                                             
+				};
+
+				// send mail with defined transport object                                                 
+				transporter.sendMail(mailOptions, function (error, info) {
+					if (error) {
+						return console.log(error);
+					}
+					console.log('Message sent: ' + info.response);
+				});
 			});
 		});
 	}
@@ -395,25 +410,25 @@ router.post('/books/:id', function(req, res) {
 
 router.get(
 	'/sales/admin',
-	passport.authenticate('jwt', {session: false}),
-	function(req, res) {
+	passport.authenticate('jwt', {
+		session: false
+	}),
+	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
-			Sales.find(function(err, sales) {
+			Sales.find(function (err, sales) {
 				User.populate(
-					sales,
-					{
+					sales, {
 						path: 'users',
 						select: 'email'
 					},
-					function(err, sales) {
+					function (err, sales) {
 						Book.populate(
-							sales,
-							{
+							sales, {
 								path: 'books',
 								select: 'title author publisher'
 							},
-							function(err, sales) {
+							function (err, sales) {
 								res.json(sales);
 							}
 						);
@@ -442,10 +457,10 @@ router.get(
 	passport.authenticate('jwt', {
 		session: false
 	}),
-	function(req, res) {
+	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
-			User.find(function(err, users) {
+			User.find(function (err, users) {
 				if (err) return next(err);
 				res.json(users);
 			});
@@ -458,7 +473,7 @@ router.get(
 	}
 );
 
-getToken = function(headers) {
+getToken = function (headers) {
 	if (headers && headers.authorization) {
 		var parted = headers.authorization.split(' ');
 		if (parted.length === 2) {

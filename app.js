@@ -31,5 +31,5 @@ app.listen(port, host, () => console.log('Escuchando puerto: ' + port ));
 
 app.get('/', function(req, res) {
     res.send('Page under construction.');
-  });
+});
 
