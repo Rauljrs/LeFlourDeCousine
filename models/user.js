@@ -15,6 +15,10 @@ const UserSchema = new mongoose.Schema({
         required: true       
     }
 
+},{
+    timestamps: {
+    createdAt: 'create_at'
+    }
 });
 
 const User = mongoose.model('User', UserSchema);

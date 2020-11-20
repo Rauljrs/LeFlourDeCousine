@@ -23,15 +23,13 @@ const Post = require('../models/post');
 
 
 var transporter = nodemailer.createTransport({
-	service: 'gmail', // your service name
-	secure: false,
-	port: 25,
-	auth: {
+	host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for 587, false for other ports
+    requireTLS: true,
+    auth: {
 		user: process.env.EMAIL_USER,
 		pass: process.env.EMAIL_PASS
-	},
-	tls: {
-		rejectUnauthorized: false
 	}
 });
 
@@ -106,6 +104,7 @@ router.post('/signin/admin', function (req, res) {
 						// return the information including token as JSON
 						res.json({
 							success: true,
+							username: req.body.username,
 							token: 'JWT ' + token
 						});
 					} else {
@@ -157,7 +156,7 @@ router.post(
 							msg: 'Save post failed.'
 						});
 					}
-					fs.unlink(req.file.path);
+					fs.remove(req.file.path);
 					res.json({
 						success: true,
 						msg: 'Successful created new post.'
@@ -319,6 +318,7 @@ router.post(
 							msg: 'Save book failed.'
 						});
 					}
+					fs.remove(req.path.file);
 					res.json({
 						success: true,
 						msg: 'Successful created new book.'
