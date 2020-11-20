@@ -37,11 +37,7 @@ var transporter = nodemailer.createTransport({
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
 router.post('/signup/admin', function (req, res) {
-	const admin = Admin.findOne({
-		username: req.body.username
-	}).exec();
-
-	if(admin.role === 'admin'){
+	
 		if (!req.body.username || !req.body.password) {
 			res.json({
 				success: false,
@@ -67,11 +63,8 @@ router.post('/signup/admin', function (req, res) {
 				});
 			});
 		}
-	}else{
-		res.json({
-			msg: 'Only admin can signup new admins'
-		})
-	}
+
+	
 });
 
 router.put('/signin/admin/change', passport.authenticate('jwt', {session: false}), async function (req, res) {
@@ -93,8 +86,13 @@ router.put('/signin/admin/change', passport.authenticate('jwt', {session: false}
 				// check if password matches
 				admin.comparePassword(req.body.oldpassword, function (err, isMatch) {
 					if (isMatch && !err) {
-						// return the information including token as JSON
-						res.json({msg: "Old password is correct"});
+						Admin.updateOne({username: req.body.username},{
+							$set: {
+								password: req.body.newpassword
+							}
+						}).exec();
+						res.send("Password changed");
+						
 					} else {
 						res.status(401).send({
 							success: false,
