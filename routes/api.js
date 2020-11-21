@@ -242,7 +242,7 @@ router.put(
 	async (req, res) => {
 		var token = getToken(req.headers);
 		if (token) {
-			console.log(req.file)
+			
 			if (req.file == undefined) {
 				const post = await Post.findByIdAndUpdate(
 					req.params.id, {
@@ -344,6 +344,7 @@ router.post(
 					author: req.body.author,
 					publisher: req.body.publisher,
 					url: req.body.url,
+					price: req.body.url,
 					imageURL: result.url,
 					public_id: result.public_id
 				});
@@ -388,6 +389,7 @@ async (req, res) => {
 					description: req.body.description,
 					author: req.body.author,
 					publisher: req.body.publisher,
+					price: req.body.price,
 					url: req.body.url
 				}, {
 					new: true
@@ -412,6 +414,9 @@ async (req, res) => {
 						title: req.body.title,
 						description: req.body.description,
 						author: req.body.author,
+						publisher: req.body.publisher,
+						price: req.body.price,
+						url: req.body.url,
 						imageURL: uploaded.url,
 						public_id: uploaded.public_id
 					}, {
@@ -458,7 +463,15 @@ router.delete('/admin/books/:id', passport.authenticate('jwt', {
 router.post('/books/:id', async function (req, res) {
 	
 	let user = await User.findOne({email: req.body.email});
+	let book = await Book.findOne({_id: req.params.id});
 	
+	if(req.body.price != book.price){
+		res.json({
+			success: false,
+			msg: "ingreso una cantidad incorrecta"
+		})
+	}
+
 	if(!user){
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
 			res.json({
@@ -475,7 +488,7 @@ router.post('/books/:id', async function (req, res) {
 			var newSale = new Sales({
 				users: newUser._id,
 				books: req.params.id,
-				price: req.body.price
+				price: book.price
 			});
 			
 
