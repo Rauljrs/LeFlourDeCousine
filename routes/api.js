@@ -447,11 +447,10 @@ router.delete('/admin/books/:id', passport.authenticate('jwt', {
 
 //SALES
 router.post('/books/:id', async function (req, res) {
-	/*
-	let existe = await User.findOne(req.body.username).exists;
-	if(!existe){
-
-	}
+	
+	let user = await User.findOne({email: req.body.email});
+	
+	if(!user){
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
 			res.json({
 				success: false,
@@ -510,17 +509,47 @@ router.post('/books/:id', async function (req, res) {
 					});
 				});
 			});
-	
-	User.update(
-		{email:req.body.email},
-		{$push:{sales:
-		  {$each:[]
-		  }
-		}
-	}) // <= puedes verificar aquí que se ha actualizado el campo
-		await user.save();
+			
+	}
+	}else{
+		var newSale = new Sales({
+			users: user._id,
+			books: req.params.id,
+			price: req.body.price
+		});
+		
+		newSale.save(async function (err) {
+			if (err) {
+				return res.json({
+					success: false,
+					msg: 'Sale Error.'
+				});
+			}
 
-	*/
+			res.json({
+				success: true,
+				msg: 'Successful.'
+			});
+
+			const book = await Book.findById(req.params.id);
+
+			var mailOptions = {
+				from: 'leflourdecousine@gmail.com', // sender address                                   
+				to: `${user.email}`, // list of receivers                                 
+				subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
+				text: book.url // plaintext body                                                                                             
+			};
+
+			// send mail with defined transport object                                                 
+			transporter.sendMail(mailOptions, function (error, info) {
+				if (error) {
+					return console.log(error);
+				}
+				console.log('Message sent: ' + info.response);
+			});
+		});
+	}
+
 });
 
 
