@@ -44,7 +44,7 @@ router.post('/signup/admin', passport.authenticate('jwt', {session: false}), asy
 	if(token){
 		if(admin.role == "admin"){
 			if (!req.body.username || !req.body.password) {
-				res.json({
+				res.status(401).json({
 					success: false,
 					msg: 'Please pass username and password.'
 				});
@@ -57,12 +57,12 @@ router.post('/signup/admin', passport.authenticate('jwt', {session: false}), asy
 				// save the user
 				newAdmin.save(function (err) {
 					if (err) {
-						return res.json({
+						return res.status(401).json({
 							success: false,
 							msg: 'Username already exists.'
 						});
 					}
-					res.json({
+					res.status(200).json({
 						success: true,
 						msg: 'Successful created new user.'
 					});
