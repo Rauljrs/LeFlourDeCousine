@@ -344,20 +344,20 @@ router.post(
 					author: req.body.author,
 					publisher: req.body.publisher,
 					url: req.body.url,
-					price: req.body.url,
+					price: req.body.price,
 					imageURL: result.url,
 					public_id: result.public_id
 				});
 	
 				newBook.save(function (err) {
 					if (err) {
-						return res.json({
+						return res.status(400).json({
 							success: false,
 							msg: 'Save book failed.'
 						});
 					}
 					fs.unlink(req.file.path);		
-					res.json({
+					res.status(200).json({
 						success: true,
 						msg: 'Successful created new book.'
 					});
