@@ -36,8 +36,10 @@ var transporter = nodemailer.createTransport({
 
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
-router.post('/signup/admin', function (req, res) {
-	
+router.post('/signup/admin', passport.authenticate('jwt', {session: false}), function (req, res) {
+			
+	var token = getToken(req.headers);
+	if(token){
 		if (!req.body.username || !req.body.password) {
 			res.json({
 				success: false,
@@ -64,6 +66,7 @@ router.post('/signup/admin', function (req, res) {
 			});
 		}
 
+	}
 	
 });
 
