@@ -6,8 +6,8 @@ const salesSchema = new mongoose.Schema({
         ref: 'users'
     },
     books: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'book'
+        type: String,
+        require: true
     },
     price: {
         type: Number,

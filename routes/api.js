@@ -479,9 +479,9 @@ router.post('/books/:id', async function (req, res) {
 				email: req.body.email,
 			});
 	
-			var newSale = new Sales({
+			var newSales = new Sales({
 				users: newUser._id,
-				books: req.params.id,
+				books: book.title,
 				price: book.price
 			});
 			
@@ -494,7 +494,7 @@ router.post('/books/:id', async function (req, res) {
 						msg: 'Error.'
 					});
 				}
-				newSale.save(async function (err) {
+				newSales.save(async function (err) {
 					if (err) {
 						return res.json({
 							success: false,
@@ -530,8 +530,8 @@ router.post('/books/:id', async function (req, res) {
 	}else{
 		var newSale = new Sales({
 			users: user._id,
-			books: req.params.id,
-			price: req.body.price
+			books: book.title,
+			price: book.price
 		});
 		
 		newSale.save(async function (err) {
