@@ -259,7 +259,7 @@ router.put(
 
 				res.status(204).json();
 			} else {
-				if (req.file.path === true) {
+				
 					const uploaded = await cloudinary.uploader.upload(req.file.path);
 					const oldpost = await Post.findById(req.params.id);
 					cloudinary.uploader.destroy(oldpost.public_id, function (error, result) {
@@ -282,7 +282,7 @@ router.put(
 					}
 					fs.unlink(req.file.path);
 					res.status(204).send('Successful edited the post.');
-				}
+				
 			}
 		}
 	}
