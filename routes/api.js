@@ -36,37 +36,41 @@ var transporter = nodemailer.createTransport({
 
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
-router.post('/signup/admin', passport.authenticate('jwt', {session: false}), function (req, res) {
-			
-	var token = getToken(req.headers);
-	if(token){
-		if (!req.body.username || !req.body.password) {
-			res.json({
-				success: false,
-				msg: 'Please pass username and password.'
-			});
-		} else {
-			var newAdmin = new Admin({
-				username: req.body.username,
-				password: req.body.password,
-				role: req.body.role
-			});
-			// save the user
-			newAdmin.save(function (err) {
-				if (err) {
-					return res.json({
-						success: false,
-						msg: 'Username already exists.'
-					});
-				}
-				res.json({
-					success: true,
-					msg: 'Successful created new user.'
-				});
-			});
-		}
+router.post('/signup/admin', passport.authenticate('jwt', {session: false}), async function (req, res) {
+	let admin = await Admin.findOne({role: "admin"});
 
-	}
+	var token = getToken(req.headers);
+	
+	if(token){
+		if(admin.role == "admin"){
+			if (!req.body.username || !req.body.password) {
+				res.json({
+					success: false,
+					msg: 'Please pass username and password.'
+				});
+			} else {
+				var newAdmin = new Admin({
+					username: req.body.username,
+					password: req.body.password,
+					role: req.body.role
+				});
+				// save the user
+				newAdmin.save(function (err) {
+					if (err) {
+						return res.json({
+							success: false,
+							msg: 'Username already exists.'
+						});
+					}
+					res.json({
+						success: true,
+						msg: 'Successful created new user.'
+					});
+				});
+			}
+	
+		}
+		}
 	
 });
 
