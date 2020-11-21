@@ -14,6 +14,11 @@ const adminSchema = new mongoose.Schema({
     role: {
         type: String
     }
+},{
+    timestamps: {
+        createdAt: 'created_at',
+        updatedAt: 'update_at'
+    }
 });
 
 adminSchema.pre('save', function (next) {

@@ -197,8 +197,6 @@ router.post(
 					msg: 'Unauthorized.'
 				});
 			}
-			//BORRA LA FOTO DEL SERVIDOR PORQUE YA NO ES NECESARIO QUE SE ENCUENTRE EN EL MISMO
-			
 
 		}
 	}
@@ -449,11 +447,11 @@ router.delete('/admin/books/:id', passport.authenticate('jwt', {
 
 //SALES
 router.post('/books/:id', async function (req, res) {
-	let uservalid = await User.findOne({username: req.body.username}).exec();
-	//let salevalid = await Sales.findById(uservalid._id).exec();
-	console.log(uservalid);
-	//console.log(salevalid);
 	/*
+	let existe = await User.findOne(req.body.username).exists;
+	if(!existe){
+
+	}
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
 			res.json({
 				success: false,
@@ -513,11 +511,16 @@ router.post('/books/:id', async function (req, res) {
 				});
 			});
 	
-			user.sales.push(sale._id);
-		console.log(sale); // <= puedes verificar aquí que se ha actualizado el campo
+	User.update(
+		{email:req.body.email},
+		{$push:{sales:
+		  {$each:[]
+		  }
+		}
+	}) // <= puedes verificar aquí que se ha actualizado el campo
 		await user.save();
+
 	*/
-	
 });
 
 
@@ -569,7 +572,7 @@ router.get(
 	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
-			Admin.find(function (err, users) {
+			Admin.find({}, {password: 0, update_at: 0, __v: 0},function (err, users) {
 				if (err) return next(err);
 				res.json(users);
 			});
