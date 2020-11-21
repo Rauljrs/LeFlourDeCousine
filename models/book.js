@@ -17,6 +17,10 @@ const BookSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  price: {
+    type: Number,
+    require: true
+  },
   url: {
     type: String,
     required: true

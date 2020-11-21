@@ -464,13 +464,7 @@ router.post('/books/:id', async function (req, res) {
 	
 	let user = await User.findOne({email: req.body.email});
 	let book = await Book.findOne({_id: req.params.id});
-	
-	if(req.body.price != book.price){
-		res.json({
-			success: false,
-			msg: "ingreso una cantidad incorrecta"
-		})
-	}
+
 
 	if(!user){
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
