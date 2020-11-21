@@ -242,7 +242,8 @@ router.put(
 	async (req, res) => {
 		var token = getToken(req.headers);
 		if (token) {
-			if (req.file === undefined) {
+			console.log(req.file)
+			if (req.file == undefined) {
 				const post = await Post.findByIdAndUpdate(
 					req.params.id, {
 						title: req.body.title,
@@ -257,8 +258,9 @@ router.put(
 					return res.status(404).send('ID del post no existe...');
 				}
 
-				res.status(204).json();
-			} else {
+				res.status(204).json({msg: "post editado sin cambiar la imagen"});
+			}
+
 				
 					const uploaded = await cloudinary.uploader.upload(req.file.path);
 					const oldpost = await Post.findById(req.params.id);
@@ -283,7 +285,7 @@ router.put(
 					fs.unlink(req.file.path);
 					res.status(204).send('Successful edited the post.');
 				
-			}
+			
 		}
 	}
 );
