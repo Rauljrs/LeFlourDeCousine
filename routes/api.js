@@ -25,10 +25,10 @@ const Sale = require('../models/sales');
 
 var transporter = nodemailer.createTransport({
 	host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // true for 587, false for other ports
-    requireTLS: true,
-    auth: {
+	port: 587,
+	secure: false, // true for 587, false for other ports
+	requireTLS: true,
+	auth: {
 		user: process.env.EMAIL_USER,
 		pass: process.env.EMAIL_PASS
 	}
@@ -36,13 +36,17 @@ var transporter = nodemailer.createTransport({
 
 //SIGNIN - SIGNUP
 //CREA NUEVO USUARIO ADMINISTRADOR
-router.post('/signup/admin', passport.authenticate('jwt', {session: false}), async function (req, res) {
-	let admin = await Admin.findOne({role: "admin"});
+router.post('/signup/admin', passport.authenticate('jwt', {
+	session: false
+}), async function (req, res) {
+	let admin = await Admin.findOne({
+		role: "admin"
+	});
 
 	var token = getToken(req.headers);
-	
-	if(token){
-		if(admin.role == "admin"){
+
+	if (token) {
+		if (admin.role == "admin") {
 			if (!req.body.username || !req.body.password) {
 				res.status(401).json({
 					success: false,
@@ -68,50 +72,54 @@ router.post('/signup/admin', passport.authenticate('jwt', {session: false}), asy
 					});
 				});
 			}
-	
+
 		}
-		}
-	
+	}
+
 });
 
-router.put('/signin/admin/change', passport.authenticate('jwt', {session: false}), async function (req, res) {
-			
-	var token = getToken(req.headers);
-	if(token){
-		Admin.findOne({
-			username: req.body.username
-		},
-		function (err, admin) {
-			if (err) throw err;
+router.put('/signin/admin/change', passport.authenticate('jwt', {
+	session: false
+}), async function (req, res) {
 
-			if (!admin) {
-				res.status(401).send({
-					success: false,
-					msg: 'Authentication failed. Admin not found.'
-				});
-			} else {
-				// check if password matches
-				admin.comparePassword(req.body.oldpassword, function (err, isMatch) {
-					if (isMatch && !err) {
-						Admin.updateOne({username: req.body.username},{
-							$set: {
-								password: req.body.newpassword
-							}
-						}).exec();
-						res.send("Password changed");
-						
-					} else {
-						res.status(401).send({
-							success: false,
-							msg: 'Authentication failed. Wrong password.'
-						});
-					}
-				});
+	var token = getToken(req.headers);
+	if (token) {
+		Admin.findOne({
+				username: req.body.username
+			},
+			function (err, admin) {
+				if (err) throw err;
+
+				if (!admin) {
+					res.status(401).send({
+						success: false,
+						msg: 'Authentication failed. Admin not found.'
+					});
+				} else {
+					// check if password matches
+					admin.comparePassword(req.body.oldpassword, function (err, isMatch) {
+						if (isMatch && !err) {
+							Admin.updateOne({
+								username: req.body.username
+							}, {
+								$set: {
+									password: req.body.newpassword
+								}
+							}).exec();
+							res.send("Password changed");
+
+						} else {
+							res.status(401).send({
+								success: false,
+								msg: 'Authentication failed. Wrong password.'
+							});
+						}
+					});
+				}
 			}
-		}
-	);
+		);
 	}
-	
+
 });
 
 //INICIA SESIÓN EL USUARIO ADMINISTRADOR
@@ -242,7 +250,7 @@ router.put(
 	async (req, res) => {
 		var token = getToken(req.headers);
 		if (token) {
-			
+
 			if (req.file == undefined) {
 				const post = await Post.findByIdAndUpdate(
 					req.params.id, {
@@ -258,34 +266,36 @@ router.put(
 					return res.status(404).send('ID del post no existe...');
 				}
 
-				res.status(204).json({msg: "post editado sin cambiar la imagen"});
+				res.status(204).json({
+					msg: "post editado sin cambiar la imagen"
+				});
 			}
 
-				
-					const uploaded = await cloudinary.uploader.upload(req.file.path);
-					const oldpost = await Post.findById(req.params.id);
-					cloudinary.uploader.destroy(oldpost.public_id, function (error, result) {
-						console.log(result, error);
-					});
 
-					const post = await Post.findByIdAndUpdate(
-						req.params.id, {
-							title: req.body.title,
-							content: req.body.content,
-							ingredients: req.body.ingredients,
-							imageURL: uploaded.url,
-							public_id: uploaded.public_id
-						}, {
-							new: true
-						}
-					);
-					if (!post) {
-						return res.status(404).send('ID del post no existe...');
-					}
-					fs.unlink(req.file.path);
-					res.status(204).send('Successful edited the post.');
-				
-			
+			const uploaded = await cloudinary.uploader.upload(req.file.path);
+			const oldpost = await Post.findById(req.params.id);
+			cloudinary.uploader.destroy(oldpost.public_id, function (error, result) {
+				console.log(result, error);
+			});
+
+			const post = await Post.findByIdAndUpdate(
+				req.params.id, {
+					title: req.body.title,
+					content: req.body.content,
+					ingredients: req.body.ingredients,
+					imageURL: uploaded.url,
+					public_id: uploaded.public_id
+				}, {
+					new: true
+				}
+			);
+			if (!post) {
+				return res.status(404).send('ID del post no existe...');
+			}
+			fs.unlink(req.file.path);
+			res.status(204).send('Successful edited the post.');
+
+
 		}
 	}
 );
@@ -330,14 +340,14 @@ router.post(
 	}),
 	async function (req, res) {
 		var token = getToken(req.headers);
-		
+
 		if (req.file === undefined) {
 			res.send("NO IMAGE FOUND");
 		} else {
-		
+
 			if (token) {
 				const result = await cloudinary.uploader.upload(req.file.path);
-				
+
 				var newBook = new Book({
 					title: req.body.title,
 					description: req.body.description,
@@ -348,7 +358,7 @@ router.post(
 					imageURL: result.url,
 					public_id: result.public_id
 				});
-	
+
 				newBook.save(function (err) {
 					if (err) {
 						return res.status(400).json({
@@ -356,7 +366,7 @@ router.post(
 							msg: 'Save book failed.'
 						});
 					}
-					fs.unlink(req.file.path);		
+					fs.unlink(req.file.path);
 					res.status(200).json({
 						success: true,
 						msg: 'Successful created new book.'
@@ -368,41 +378,41 @@ router.post(
 					msg: 'Unauthorized.'
 				});
 			}
-		}	
-		
+		}
+
 	}
 );
 
 
 router.put('/admin/books/:id',
-passport.authenticate('jwt', {
-	session: false
-}),
-async (req, res) => {
-	var token = getToken(req.headers);
-	if (token) {
-		if (req.file === undefined) {
-			
-			const book = await Book.findByIdAndUpdate(
-				req.params.id, {
-					title: req.body.title,
-					description: req.body.description,
-					author: req.body.author,
-					publisher: req.body.publisher,
-					price: req.body.price,
-					url: req.body.url
-				}, {
-					new: true
+	passport.authenticate('jwt', {
+		session: false
+	}),
+	async (req, res) => {
+		var token = getToken(req.headers);
+		if (token) {
+			if (req.file === undefined) {
+
+				const book = await Book.findByIdAndUpdate(
+					req.params.id, {
+						title: req.body.title,
+						description: req.body.description,
+						author: req.body.author,
+						publisher: req.body.publisher,
+						price: req.body.price,
+						url: req.body.url
+					}, {
+						new: true
+					}
+				);
+
+				if (!book) {
+					return res.status(404).send('ID not found...');
 				}
-			);
 
-			if (!book) {
-				return res.status(404).send('ID not found...');
-			}
+				res.status(204).json();
+			} else {
 
-			res.status(204).json();
-		} else {
-			
 				const uploaded = await cloudinary.uploader.upload(req.file.path);
 				const oldbook = await Book.findById(req.params.id);
 				cloudinary.uploader.destroy(oldbook.public_id, function (error, result) {
@@ -429,9 +439,9 @@ async (req, res) => {
 				fs.unlink(req.file.path);
 				res.status(204).send('Successful edited the book.');
 			}
-		
+
+		}
 	}
-}
 
 );
 
@@ -461,12 +471,16 @@ router.delete('/admin/books/:id', passport.authenticate('jwt', {
 
 //SALES
 router.post('/books/:id', async function (req, res) {
-	
-	let user = await User.findOne({email: req.body.email});
-	let book = await Book.findOne({_id: req.params.id});
+
+	let user = await User.findOne({
+		email: req.body.email
+	});
+	let book = await Book.findOne({
+		_id: req.params.id
+	});
 
 
-	if(!user){
+	if (!user) {
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
 			res.json({
 				success: false,
@@ -478,13 +492,13 @@ router.post('/books/:id', async function (req, res) {
 				lastname: req.body.lastname,
 				email: req.body.email,
 			});
-	
+
 			var newSales = new Sales({
 				users: newUser._id,
 				books: book.title,
 				price: book.price
 			});
-			
+
 
 			newUser.save(function (err) {
 				if (err) {
@@ -501,21 +515,21 @@ router.post('/books/:id', async function (req, res) {
 							msg: 'Sale Error.'
 						});
 					}
-	
+
 					res.json({
 						success: true,
 						msg: 'Successful.'
 					});
-	
+
 					const book = await Book.findById(req.params.id);
-	
+
 					var mailOptions = {
 						from: 'leflourdecousine@gmail.com', // sender address                                   
 						to: `${newUser.email}`, // list of receivers                                 
 						subject: 'Le Flour de Cousine: Gracias por su compra!', // Subject line                                                 
 						text: book.url // plaintext body                                                                                             
 					};
-	
+
 					// send mail with defined transport object                                                 
 					transporter.sendMail(mailOptions, function (error, info) {
 						if (error) {
@@ -525,15 +539,15 @@ router.post('/books/:id', async function (req, res) {
 					});
 				});
 			});
-			
-	}
-	}else{
+
+		}
+	} else {
 		var newSale = new Sales({
 			users: user._id,
 			books: book.title,
 			price: book.price
 		});
-		
+
 		newSale.save(async function (err) {
 			if (err) {
 				return res.json({
@@ -617,7 +631,11 @@ router.get(
 	function (req, res) {
 		var token = getToken(req.headers);
 		if (token) {
-			Admin.find({}, {password: 0, update_at: 0, __v: 0},function (err, users) {
+			Admin.find({}, {
+				password: 0,
+				update_at: 0,
+				__v: 0
+			}, function (err, users) {
 				if (err) return next(err);
 				res.json(users);
 			});
