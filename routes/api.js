@@ -479,12 +479,15 @@ router.post('/books/:id', async function (req, res) {
 		_id: req.params.id
 	});
 
+	if (!book) {
+		return res.status(404).send('ID del libro no existe...');
+	}
 
 	if (!user) {
 		if (!req.body.name || !req.body.lastname || !req.body.email) {
 			res.json({
 				success: false,
-				msg: 'Please pass name, last name and email.'
+				msg: 'Por favor introduzca los datos requeridos correctamente'
 			});
 		} else {
 			var newUser = new User({
@@ -505,20 +508,20 @@ router.post('/books/:id', async function (req, res) {
 					console.log(err);
 					return res.json({
 						success: false,
-						msg: 'Error.'
+						msg: 'Error en la creación del usuario'
 					});
 				}
 				newSales.save(async function (err) {
 					if (err) {
 						return res.json({
 							success: false,
-							msg: 'Sale Error.'
+							msg: 'Error en la creación de la venta'
 						});
 					}
 
 					res.json({
 						success: true,
-						msg: 'Successful.'
+						msg: 'Venta cargada exitosamente'
 					});
 
 					const book = await Book.findById(req.params.id);
