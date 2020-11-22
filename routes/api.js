@@ -494,7 +494,6 @@ router.post('/books/:id', async function (req, res) {
 			});
 
 			var newSales = new Sales({
-				idTransaction: req.body.idTransaction,
 				users: newUser._id,
 				books: book.title,
 				price: book.price
@@ -544,7 +543,6 @@ router.post('/books/:id', async function (req, res) {
 		}
 	} else {
 		var newSale = new Sales({
-			idTransaction: req.body.idTransaction,
 			users: user._id,
 			books: book.title,
 			price: book.price
