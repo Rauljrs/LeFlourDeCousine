@@ -600,15 +600,7 @@ router.get(
 						select: 'name lastname email'
 					},
 					function (err, sales) {
-						Book.populate(
-							sales, {
-								path: 'books',
-								select: 'title author publisher'
-							},
-							function (err, sales) {
-								res.json(sales);
-							}
-						);
+						res.json(sales);						
 					}
 				);
 			});
