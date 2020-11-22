@@ -391,7 +391,7 @@ router.put('/admin/books/:id',
 	async (req, res) => {
 		var token = getToken(req.headers);
 		if (token) {
-			if (req.file === undefined) {
+			if ((req.file === undefined)&&(req.body.url)){
 
 				const book = await Book.findByIdAndUpdate(
 					req.params.id, {
@@ -411,7 +411,52 @@ router.put('/admin/books/:id',
 				}
 
 				res.status(204).json();
-			} else {
+			} 
+
+			if ((req.file === undefined)&&(!req.body.url)){
+
+				const book = await Book.findByIdAndUpdate(
+					req.params.id, {
+						title: req.body.title,
+						description: req.body.description,
+						author: req.body.author,
+						publisher: req.body.publisher,
+						price: req.body.price
+					}, {
+						new: true
+					}
+				);
+
+				if (!book) {
+					return res.status(404).send('ID not found...');
+				}
+
+				res.status(204).json();
+			} 
+
+			if ((req.file !== undefined)&&(req.body.url)){
+
+				const book = await Book.findByIdAndUpdate(
+					req.params.id, {
+						title: req.body.title,
+						description: req.body.description,
+						author: req.body.author,
+						publisher: req.body.publisher,
+						price: req.body.price,
+						url: req.body.url
+					}, {
+						new: true
+					}
+				);
+
+				if (!book) {
+					return res.status(404).send('ID not found...');
+				}
+
+				res.status(204).json();
+			} 
+
+			if((req.file !== undefined)&&(!req.body.url)){
 
 				const uploaded = await cloudinary.uploader.upload(req.file.path);
 				const oldbook = await Book.findById(req.params.id);
@@ -426,7 +471,6 @@ router.put('/admin/books/:id',
 						author: req.body.author,
 						publisher: req.body.publisher,
 						price: req.body.price,
-						url: req.body.url,
 						imageURL: uploaded.url,
 						public_id: uploaded.public_id
 					}, {
