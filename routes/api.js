@@ -436,6 +436,12 @@ router.put('/admin/books/:id',
 
 			if ((req.file !== undefined)&&(req.body.url)){
 
+				const uploaded = await cloudinary.uploader.upload(req.file.path);
+				const oldbook = await Book.findById(req.params.id);
+				cloudinary.uploader.destroy(oldbook.public_id, function (error, result) {
+					console.log(result, error);
+				});
+
 				const book = await Book.findByIdAndUpdate(
 					req.params.id, {
 						title: req.body.title,
@@ -443,17 +449,18 @@ router.put('/admin/books/:id',
 						author: req.body.author,
 						publisher: req.body.publisher,
 						price: req.body.price,
-						url: req.body.url
+						url: req.body.url,
+						imageURL: uploaded.url,
+						public_id: uploaded.public_id
 					}, {
 						new: true
 					}
 				);
-
 				if (!book) {
 					return res.status(404).send('ID not found...');
 				}
-
-				res.status(204).json();
+				fs.unlink(req.file.path);
+				res.status(204).send('Successful edited the book.');
 			} 
 
 			if((req.file !== undefined)&&(!req.body.url)){
